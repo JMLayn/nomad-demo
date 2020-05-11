@@ -30,23 +30,21 @@ choco install azure-cli -y
 
 # Create a Desktop shortcut for Cmder
 # Note: Set your default shell to Powershell the first time you run this.
-$TargetFile = "C:\tools\cmder\Cmder.exe"
-$ShortcutFile = "C:\Users\Public\Desktop\cmder.lnk"
-$WScriptShell = New-Object -ComObject WScript.Shell
-$Shortcut = $WScriptShell.CreateShortcut($ShortcutFile)
-$Shortcut.TargetPath = $TargetFile
-$Shortcut.Save()
+# $TargetFile = "C:\tools\cmder\Cmder.exe"
+# $ShortcutFile = "C:\Users\Public\Desktop\cmder.lnk"
+# $WScriptShell = New-Object -ComObject WScript.Shell
+# $Shortcut = $WScriptShell.CreateShortcut($ShortcutFile)
+# $Shortcut.TargetPath = $TargetFile
+# $Shortcut.Save()
 
 # Powershell should be able to wget right?
 # Force powershell to use a modern version of TLS
 Write-Host -ForegroundColor White "Installing Vault and Terraform..."
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-wget https://releases.hashicorp.com/vault/${vault_version}/vault_${vault_version}_windows_amd64.zip -OutFile C:\Windows\Temp\vault.zip
-wget https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_windows_amd64.zip -OutFile C:\Windows\Temp\terraform.zip
+wget https://releases.hashicorp.com/nomad/0.11.1/nomad_0.11.1_windows_amd64.zip -OutFile C:\Windows\Temp\nomad.zip
 
 # Unzip the things
-Expand-Archive -Path C:\Windows\Temp\vault.zip -DestinationPath C:\Windows\System32
-Expand-Archive -Path C:\Windows\Temp\terraform.zip -DestinationPath C:\Windows\System32
+Expand-Archive -Path C:\Windows\Temp\nomad.zip -DestinationPath C:\Windows\System32
 
 # Open ports 80 and 443, run RDP on those ports as well as 3389
 reg import C:\Users\Public\RDP-Tcp-443.reg

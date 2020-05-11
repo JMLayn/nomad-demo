@@ -13,7 +13,7 @@
   },
   "builders": [{
     "type": "azure-arm",
-    "managed_image_name": "rjackson-test-images",
+    "managed_image_name": "rjackson-windows-0.01",
     "managed_image_resource_group_name": "{{ user `resource_group_name` }}",
 
     "client_id": "{{ user `client_id` }}",
@@ -25,12 +25,12 @@
     "os_type": "Windows",
     "image_publisher": "MicrosoftWindowsServer",
     "image_offer": "WindowsServer",
-    "image_sku": "2016-Datacenter-Server-Core",
+    "image_sku": "2019-Datacenter",
 
     "communicator": "winrm",
     "winrm_use_ssl": "true",
     "winrm_insecure": "true",
-    "winrm_timeout": "3m",
+    "winrm_timeout": "10m",
     "winrm_username": "packer",
 
     "location": "{{ user `location` }}",
@@ -41,6 +41,10 @@
       "type": "file",
       "source": "RDP-Tcp-443.reg",
       "destination": "C:\\Users\\Public\\RDP-Tcp-443.reg"
+    },
+    {
+      "type": "powershell",
+        "script": "install_chocolatey.ps1"
     },
     {
       "type": "powershell",

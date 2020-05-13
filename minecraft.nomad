@@ -15,7 +15,7 @@ job "minecraft" {
       driver = "raw_exec"
       volume_mount {
         volume      = "minecraft"
-        destination = "//"
+        destination = "c:\\"
         // volume      = "efs-tests"
         // destination = "/csi"
         // read_only   = false
@@ -53,7 +53,7 @@ job "minecraft" {
       }
       volume_mount {
         volume      = "minecraft"
-        destination = "//"
+        destination = "c:\\"
         // volume      = "efs-tests"
         // destination = "/csi"
         // read_only   = false

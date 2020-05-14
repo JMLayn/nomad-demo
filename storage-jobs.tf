@@ -1,10 +1,5 @@
-variable "nomad_region" {
-  type        = string
-  description = "Region of NOMAD server (not AWS Region)"
-  default     = "global"
-}
 provider "nomad" {
-  address = "http://${aws_instance.nomad-server.public_ip}:4646"
+  address = "http://${aws_instance.nomad-server[0].public_ip}:4646"
   region  = var.nomad_region
 }
 resource "nomad_job" "plugin-ebs-controller" {

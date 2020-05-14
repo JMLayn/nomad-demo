@@ -1,4 +1,5 @@
 # Variable values to use for deployment
+prefix = "rjackson"
 region = "us-east-2"
 aws_key = "rjackson-east2"
 owner_tag = "rjackson"

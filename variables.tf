@@ -3,6 +3,12 @@ variable "region" {
   default = "us-east-1"
 }
 
+variable "nomad_region" {
+  type        = string
+  description = "Region of NOMAD server (not AWS Region)"
+  default     = "global"
+}
+
 variable "vpc_cidr" {
   type        = string
   description = "CIDR of the VPC"

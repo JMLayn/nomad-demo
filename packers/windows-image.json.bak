@@ -12,7 +12,7 @@
   },
   "builders": [{
     "type": "azure-arm",
-    "managed_image_name": "rjackson-windows-0.03",
+    "managed_image_name": "rjackson-windows-0.02",
     "managed_image_resource_group_name": "{{ user `resource_group_name` }}",
 
     "client_id": "{{ user `client_id` }}",
@@ -37,27 +37,33 @@
   }],
   "provisioners": [
     {
+      "type": "powershell",
+      "inline": [
+        "New-Item -ItemType Directory -Path 'c:\\hashicorp\\nomad\\nomad.d', 'c:\\hashicorp\\nomad\\nomad-data'",
+        "New-Item -ItemType Directory -Path 'c:\\hashicorp\\consul\\consul.d', 'c:\\hashicorp\\consul\\consul-data'",
+        "Write-Host -ForegroundColor White \"Downloading Nomad\"",
+        "Invoke-WebRequest -Uri https://releases.hashicorp.com/nomad/0.11.1/nomad_0.11.1_windows_amd64.zip -OutFile nomad_0.11.1_windows_amd64.zip",
+        "Write-Host -ForegroundColor White \"Downloading Consul\"",
+        "Invoke-WebRequest -Uri https://releases.hashicorp.com/consul/1.7.3/consul_1.7.3_windows_amd64.zip -OutFile consul_1.7.3_windows_amd64.zip",
+        "reg import C:\\Users\\Public\\RDP-Tcp-443.reg",
+        "New-NetFirewallRule -DisplayName \"Allow Inbound Port 443\" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow"
+      ]
+    },
+    {
       "type": "file",
-      "source": "RDP-Tcp-443.reg",
-      "destination": "RDP-Tcp-443.reg"
+      "source": "jre-8u251-windows-i586.exe",
+      "destination": "C:\\Users\\Public\\java_install.exe"
     },
     {
       "type": "powershell",
       "inline": [
-        "Set-PSDebug -Trace 2",
-        "New-Item -ItemType Directory -Path 'c:\\hashicorp\\nomad\\nomad.d', 'c:\\hashicorp\\nomad\\nomad-data'",
-        "New-Item -ItemType Directory -Path 'c:\\hashicorp\\consul\\consul.d', 'c:\\hashicorp\\consul\\consul-data'",
-        "Write-Host -ForegroundColor White \"Downloading Nomad\"",
-        "(New-Object System.Net.WebClient).DownloadFile('https://releases.hashicorp.com/nomad/0.11.1/nomad_0.11.1_windows_amd64.zip','nomad_0.11.1_windows_amd64.zip')",
-        "Write-Host -ForegroundColor White \"Downloading Consul\"",
-        "(New-Object System.Net.WebClient).DownloadFile('https://releases.hashicorp.com/consul/1.7.3/consul_1.7.3_windows_amd64.zip','consul_1.7.3_windows_amd64.zip')",
-        "Write-Host -ForegroundColor White \"Downloading Java\"",
-        "(New-Object System.Net.WebClient).DownloadFile('https://javadl.oracle.com/webapps/download/AutoDL?BundleId=242060_3d5a2bb8f8d4428bbe94aed7ec7ae784','jre-8u251-windows-x64.exe')",
-        "reg import 'RDP-Tcp-443.reg'",
-        "New-NetFirewallRule -DisplayName \"Allow Inbound Port 443\" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow",
-        "Write-Host -ForegroundColor White \"Installing Java\"",
-        "Start-Process -NoNewWindow -FilePath jre-8u251-windows-x64.exe -ArgumentList 'INSTALL_SILENT=Enable'"
+        "java_install.exe INSTALL_SILENT=Enable"
       ]
+    },
+    {
+      "type": "file",
+      "source": "RDP-Tcp-443.reg",
+      "destination": "C:\\Users\\Public\\RDP-Tcp-443.reg"
     },
     {
       "type": "file",

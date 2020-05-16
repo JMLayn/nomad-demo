@@ -1,7 +1,7 @@
 
 resource null_resource "provisioning-clients" {
   for_each = {for client in aws_instance.nomad-client:  client.tags.Name => client}
-    # Nomad Client Configuration
+    # Nomad Client Configuration.  Includes Raw_exec which should be in the image but this was just a workaround
     provisioner "remote-exec" {
       inline = [
         "sudo cat << EOF > /tmp/nomad-client.hcl",
@@ -13,6 +13,11 @@ resource null_resource "provisioning-clients" {
         "client {",
         "    enabled = true",
         "    servers = [\"${aws_instance.nomad-server[0].public_ip}\",\"${aws_instance.nomad-server[1].public_ip}\",\"${aws_instance.nomad-server[2].public_ip}\"]",
+        "}",
+        "plugin \"raw_exec\" {",
+        "   config {",
+        "   enabled = true",
+        "   }",
         "}",
         "EOF",
         "sudo mv /tmp/nomad-client.hcl /etc/nomad.d/nomad-client.hcl",

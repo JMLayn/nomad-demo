@@ -4,7 +4,7 @@ provider "azurerm" {
 }
 
 data "azurerm_image" "rj-image" {
-  name                = "rjackson-windows-0.01"
+  name                = "rjackson-windows-0.05"
   resource_group_name = "rjackson-rg"
 }
 

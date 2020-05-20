@@ -1,42 +1,100 @@
 provider "azurerm" {
   features {}
-  version  = ">=2.0.0"
+  version = ">=2.0.0"
 }
 
-data "azurerm_image" "rj-image" {
-  name                = "rjackson-windows-0.05"
-  resource_group_name = "rjackson-rg"
+variable "prefix" {
+  default = "rj-win"
 }
 
-output "image_id" {
-  value = data.azurerm_image.rj-image.id
+// Data Sources - should be pulled from variables used for Packer image deployment
+data "azurerm_resource_group" "main-rg" {
+  name = "rjackson-rg"
 }
 
-module mycompute {
-    source = "Azure/compute/azurerm"
-    resource_group_name = "rjackson-rg"
-    admin_password = "ComplxP@assw0rd!"
-    vm_os_id = data.azurerm_image.rj-image.id
-    is_windows_image = "true"
-    remote_port = "3389"
-    nb_instances = 1
-    public_ip_dns = ["rj-domain"]
-    vnet_subnet_id = module.network.vnet_subnets[0]
+data "azurerm_image" "search" {
+  name                = "rjackson-windows-0.03"
+  resource_group_name = data.azurerm_resource_group.main-rg.name
 }
 
-module "network" {
-    source = "Azure/network/azurerm"
-    resource_group_name = "rjackson-rg"
+// Supporting resources.
+resource "azurerm_virtual_network" "main" {
+  name                = "${var.prefix}-network"
+  address_space       = ["10.0.0.0/16"]
+  location            = data.azurerm_resource_group.main-rg.location
+  resource_group_name = data.azurerm_resource_group.main-rg.name
 }
 
-output "vm_public_name" {
-    value = module.mycompute.public_ip_dns_name
+resource "azurerm_subnet" "internal" {
+  name                 = "internal"
+  resource_group_name  = data.azurerm_resource_group.main-rg.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes       = ["10.0.2.0/24"]
 }
 
-output "vm_public_ip" {
-    value = module.mycompute.public_ip_address
+resource "azurerm_public_ip" "main-ip" {
+  name                = "main-public_ip"
+  location            = data.azurerm_resource_group.main-rg.location
+  resource_group_name = data.azurerm_resource_group.main-rg.name
+  allocation_method   = "Dynamic"
 }
 
-output "vm_private_ips" {
-    value = module.mycompute.network_interface_private_ip
+resource "azurerm_network_interface" "main" {
+  name                = "${var.prefix}-nic"
+  location            = data.azurerm_resource_group.main-rg.location
+  resource_group_name = data.azurerm_resource_group.main-rg.name
+
+  ip_configuration {
+    name                          = "${var.prefix}-private_ip"
+    subnet_id                     = azurerm_subnet.internal.id
+    public_ip_address_id          = azurerm_public_ip.main-ip.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+
+
+resource "azurerm_windows_virtual_machine" "example" {
+  name                = "${var.prefix}-Machine"
+  resource_group_name = data.azurerm_resource_group.main-rg.name
+  location            = data.azurerm_resource_group.main-rg.location
+  size                = "Standard_F2"
+  source_image_id     = data.azurerm_image.search.id
+  admin_username      = "adminuser"
+  admin_password      = "P@$$w0rd1234!"
+  network_interface_ids = [
+    azurerm_network_interface.main.id,
+  ]
+
+  winrm_listener {
+    protocol = "Http"
+  }
+
+  os_disk {
+    name                 = "${var.prefix}-disk"
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+}
+
+resource null_resource "winrm_provisioner" {
+  // provisioner "file" {
+  //   source = "setupclient.ps1"
+  //   destination = "c:\\hashicorp\\setupclient.ps1"
+  // }
+  provisioner "remote-exec" {
+    inline = [
+      "New-Item 'C:/hashicorp/nomad.d/nomad-client.hcl'"
+      // "powershell -ExecutionPolicy Unrestricted -File  c:\\hashicorp\\setupclient.ps1 -client_public_IP ${azurerm_public_ip.main-ip.ip_address}"
+    ]
+  }
+  connection {
+    host = azurerm_windows_virtual_machine.example.public_ip_address
+    port = "5985"
+    type = "winrm"
+    user = azurerm_windows_virtual_machine.example.admin_username
+    password = azurerm_windows_virtual_machine.example.admin_password
+    insecure = true
+    https = false
+  }
 }

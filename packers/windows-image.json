@@ -12,7 +12,7 @@
   },
   "builders": [{
     "type": "azure-arm",
-    "managed_image_name": "rjackson-windows-0.03",
+    "managed_image_name": "rjackson-windows-0.05",
     "managed_image_resource_group_name": "{{ user `resource_group_name` }}",
 
     "client_id": "{{ user `client_id` }}",
@@ -45,6 +45,9 @@
       "type": "powershell",
       "inline": [
         "Set-PSDebug -Trace 2",
+        "winrm set winrm/config/service/Auth '@{Basic=\"true\"}'",
+        "winrm set winrm/config/service '@{AllowUnencrypted=\"true\"}'",
+        "winrm set winrm/config/winrs '@{MaxMemoryPerShellMB=\"1024\"}'",
         "New-Item -ItemType Directory -Path 'c:\\hashicorp\\nomad\\nomad.d', 'c:\\hashicorp\\nomad\\nomad-data'",
         "New-Item -ItemType Directory -Path 'c:\\hashicorp\\consul\\consul.d', 'c:\\hashicorp\\consul\\consul-data'",
         "Write-Host -ForegroundColor White \"Downloading Nomad\"",
@@ -62,12 +65,12 @@
     {
       "type": "file",
       "source": "../files/consul-common.hcl",
-      "destination": "C:\\consul\\consul.d\\consul-common.hcl"
+      "destination": "C:\\hashicorp\\consul\\consul.d\\consul-common.hcl"
     },
     {
       "type": "file",
       "source": "../files/nomad-common.hcl",
-      "destination": "C:\\nomad\\nomad.d\\nomad-common.hcl"
+      "destination": "C:\\hashicorp\\nomad\\nomad.d\\nomad-common.hcl"
     },
     {
       "type": "powershell",

@@ -13,7 +13,7 @@ data "azurerm_resource_group" "main-rg" {
 }
 
 data "azurerm_image" "search" {
-  name                = "rjackson-windows-0.05"
+  name_regex          = "{$var.owner}*"
   resource_group_name = data.azurerm_resource_group.main-rg.name
 }
 

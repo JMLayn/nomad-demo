@@ -1,6 +1,12 @@
 
-variable "region" {
+variable "aws_region" {
+  type        = string
   default = "us-east-1"
+}
+
+variable "owner" {
+  type        = string
+  default = "nomad-demo"
 }
 
 variable "nomad_region" {
@@ -46,4 +52,21 @@ variable "ttl_tag" {
 variable "ssh_key" {
   type        = string
   description = "private key"
+}
+
+# Azure specific Variables
+variable "azure_location" {
+  type        = string
+  description = "location for the Azure image storage (eastus2)"
+  default = "eastus2"
+}
+variable "nomad_rg" {
+  type        = string
+  description = "Name for Azure resource group"
+  default = "rj-nomad"
+}
+variable "nomad_storage" {
+  type        = string
+  description = "Name for Azure Image Storage Location"
+  default = "rjstorage"
 }

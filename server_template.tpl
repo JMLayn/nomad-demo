@@ -6,6 +6,7 @@ server = true
 bootstrap_expect = 3
 retry_join = ["provider=aws tag_key=Name tag_value=${server_name_tag}"]
 bind_addr = "$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)"
+advertise_addr = "$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
 client_addr = "0.0.0.0"
 ui = true
 EOF
@@ -21,6 +22,11 @@ server {
         retry_max = 3
         retry_interval = "15s"
       }
+}
+advertise {
+  http = "$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+  rpc  = "$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+  serf = "$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
 }
 EOF
 

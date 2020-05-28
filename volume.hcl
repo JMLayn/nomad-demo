@@ -1,9 +1,0 @@
-# volume registration
-type = "csi"
-id = "mysql"
-name = "mysql"
-external_id = "vol-0f90498bc5fb0bb8a"
-#access_mode = "single-node-writer"
-access_mode = "multi-node-reader-only"
-attachment_mode = "file-system"
-plugin_id = "aws-ebs0"

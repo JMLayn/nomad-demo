@@ -1,17 +1,50 @@
+variable "aws_region" {
+  type = string
+  default = ""
+}
+
+variable "aws_instance_type" {
+  type = string
+  default = ""
+}
+
+variable "owner" {
+  type = string
+  default = ""
+}
+
 source "amazon-ebs" "ubuntu-image" {
-  ami_name = "nomad-demo {{timestamp}}"
-  region = "us-east-2"
-  instance_type = "t2.micro"
+  ami_name = "${var.owner}_{{timestamp}}"
+  region = "${var.aws_region}"
+  instance_type = var.aws_instance_type
+  tags = {
+    Name = "${var.owner}-Nomad"
+  }
 
   source_ami_filter {
-      filters {
-        virtualization-type = "hvm"
-        name =  "ubuntu/images/*ubuntu-bionic-18.04-amd64-server-*"
-        root-device-type = "ebs"
+      filter {
+        key = "virtualization-type"
+        value = "hvm"
+      }
+      filter {
+        key = "name"
+        value = "ubuntu/images/*ubuntu-bionic-18.04-amd64-server-*"
+      }
+      filter {
+        key = "root-device-type"
+        value = "ebs"
       }
       owners = ["099720109477"]
       most_recent = true
   }
+  //     filters {
+  //       virtualization-type = "hvm"
+  //       name =  "ubuntu/images/*ubuntu-bionic-18.04-amd64-server-*"
+  //       root-device-type = "ebs"
+  //     }
+  //     owners = ["099720109477"]
+  //     most_recent = true
+  // }
   communicator = "ssh"
   ssh_username = "ubuntu"
 }
@@ -22,27 +55,27 @@ build {
   ]
 
   provisioner "file" {
-    source      = "files/consul.service"
+    source      = "../files/consul.service"
     destination = "/tmp/consul.service"
   }
 
   provisioner "file" {
-    source      = "files/nomad.service"
+    source      = "../files/nomad.service"
     destination = "/tmp/nomad.service"
   }
 
   provisioner "file" {
-    source      = "files/nomad-common.hcl"
+    source      = "../files/nomad-common.hcl"
     destination = "/tmp/nomad-common.hcl"
   }
 
+# installing Linux items including Docker and of course Nomad and Consul images
   provisioner "shell" {
     inline = [
       "sleep 30",
       "sudo apt-get update",
       "sudo apt install unzip -y",
       "sudo apt install nfs-common -y",
-      "sudo apt install mysql-client -y",
       "sudo apt install default-jre -y",
       "curl -fsSL \"https://get.docker.com\" -o get-docker.sh",
       "sudo sh get-docker.sh",
@@ -56,6 +89,7 @@ build {
       "sudo mv consul /usr/local/bin"
     ]
   }
+# Consul installation bits
   provisioner "shell"{
     inline = [
       "sudo /usr/local/bin/consul -autocomplete-install",
@@ -65,7 +99,7 @@ build {
       "sudo mv /tmp/consul.service /etc/systemd/system/consul.service"
     ]
   }
-
+# Nomad installatin bits
   provisioner "shell"{
     inline = [
       "sudo /usr/local/bin/nomad -autocomplete-install",
@@ -77,5 +111,9 @@ build {
       "sudo mv /tmp/nomad.service /etc/systemd/system/nomad.service",
       "sudo mv /tmp/nomad-common.hcl /etc/nomad.d/nomad-common.hcl"
     ]
+ }
+ post-processor "manifest" {
+   output = "aws-manifest.json"
+   strip_path = true
  }
 }

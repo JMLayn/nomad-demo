@@ -1,2 +1,5 @@
 terraform.tfstate*
 .terraform*
+*.txt
+*.pcap
+packers/packerlog2.txt

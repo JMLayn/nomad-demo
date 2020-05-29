@@ -1,0 +1,72 @@
+provider "azurerm" {
+  features {}
+  version  = ">=2.0.0"
+}
+
+data "azurerm_image" "rj-image" {
+  name                = "rjackson-windows-0.03"
+  resource_group_name = "rjackson-rg"
+}
+
+output "image_id" {
+  value = data.azurerm_image.rj-image.id
+}
+
+module mycompute {
+    source = "Azure/compute/azurerm"
+    resource_group_name = "rjackson-rg"
+    admin_password = "ComplxP@assw0rd!"
+    vm_os_id = data.azurerm_image.rj-image.id
+    is_windows_image = "true"
+    remote_port = "3389"
+    nb_instances = 1
+    public_ip_dns = ["rj-domain"]
+    vnet_subnet_id = module.network.vnet_subnets[0]
+    user_data = <<EOF
+    <powershell>
+    $MetaDataHeaders = @{"Metadata"="true"} 
+    $client_public_IP = Invoke-RestMethod -Method GET -uri "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipaddress/0/publicip?api-version=2017-03-01&format=text" -Headers $MetaDataHeaders 
+    New-Item 'C:\hashicorp\nomad.d\nomad-client.hcl'
+    Set-Content 'C:\hashicorp\nomad.d\nomad-client.hcl' 'advertise {' 
+    Set-Content 'C:\hashicorp\nomad.d\nomad-client.hcl' '   http="$client_public_IP"'
+    Set-Content 'C:\hashicorp\nomad.d\nomad-client.hcl' '   rpc="$client_public_IP"'
+    Set-Content 'C:\hashicorp\nomad.d\nomad-client.hcl' '   serf="$client_public_IP"'
+    Set-Content 'C:\hashicorp\nomad.d\nomad-client.hcl' 'advertise }'
+    </powershell>
+    EOF
+}
+
+module "network" {
+    source = "Azure/network/azurerm"
+    resource_group_name = "rjackson-rg"
+}
+
+// resource null_resource "winrm_provisioner" {
+//   provisioner "file" {
+//     source = "setupclient.ps1"
+//     destination = "c:\\hashicorp\\setupclient.ps1"
+//   }
+//   provisioner "remote-exec" {
+//     inline = [
+//       "powershell -ExecutionPolicy Unrestricted -File  c:\\hashicorp\\setupclient.ps1 -client_public_IP ${module.mycompute.public_ip_address}"
+//     ]
+//   }
+//   connection {
+//     host = "rj-domain.eastus2.cloudapp.azure.com"
+//     type = "winrm"
+//     user = "Administrator"
+//     password = "ComplxP@assw0rd!"
+//   }
+// }
+
+output "vm_public_name" {
+    value = module.mycompute.public_ip_dns_name
+}
+
+output "vm_public_ip" {
+    value = module.mycompute.public_ip_address
+}
+
+output "vm_private_ips" {
+    value = module.mycompute.network_interface_private_ip
+}

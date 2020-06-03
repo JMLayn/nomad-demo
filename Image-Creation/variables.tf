@@ -1,3 +1,4 @@
+# Variables for use in the Image Creation run
 variable "owner" {
   type        = string
   description = "Owner tag to which the artifacts belong"
@@ -25,10 +26,5 @@ variable "azure_location" {
 variable "nomad_rg" {
   type        = string
   description = "Name for Azure resource group"
-  default = "rj-nomad"
-}
-variable "nomad_storage" {
-  type        = string
-  description = "Name for Azure Image Storage Location"
-  default = "rjstorage"
+  default = "nomad-demo"
 }

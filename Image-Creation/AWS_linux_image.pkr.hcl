@@ -1,3 +1,10 @@
+#########################################################################
+# This files creates the AWS image for Nomad and creates a manifest file
+# that is to be used for the creation of the Nomad and Consul Systems
+# It sure is nice to be able to add comments into this file...data
+#########################################################################
+
+# Local variables for the Packer Creation
 variable "aws_region" {
   type = string
   default = ""
@@ -13,6 +20,7 @@ variable "owner" {
   default = ""
 }
 
+# Looking for the source image on which to pack my new image
 source "amazon-ebs" "ubuntu-image" {
   ami_name = "${var.owner}_{{timestamp}}"
   region = "${var.aws_region}"
@@ -37,18 +45,11 @@ source "amazon-ebs" "ubuntu-image" {
       owners = ["099720109477"]
       most_recent = true
   }
-  //     filters {
-  //       virtualization-type = "hvm"
-  //       name =  "ubuntu/images/*ubuntu-bionic-18.04-amd64-server-*"
-  //       root-device-type = "ebs"
-  //     }
-  //     owners = ["099720109477"]
-  //     most_recent = true
-  // }
   communicator = "ssh"
   ssh_username = "ubuntu"
 }
 
+# Here we are actually building the image with the files
 build {
   sources = [
     "source.amazon-ebs.ubuntu-image"
@@ -93,23 +94,21 @@ build {
   provisioner "shell"{
     inline = [
       "sudo /usr/local/bin/consul -autocomplete-install",
-      "sudo useradd --system --home /etc/consul.d --shell /bin/false consul",
-      "sudo mkdir /etc/consul.d /var/lib/consul/ /var/run/consul/",
-      "sudo chown -R consul:consul /etc/consul.d /var/lib/consul/ /var/run/consul/",
+      "sudo useradd --system --home /etc/consul/consul.d --shell /bin/false consul",
+      "sudo mkdir /etc/consul /etc/consul/consul.d /etc/consul/logs /var/lib/consul/ /var/run/consul/",
+      "sudo chown -R consul:consul /etc/consul /var/lib/consul/ /var/run/consul/",
       "sudo mv /tmp/consul.service /etc/systemd/system/consul.service"
     ]
   }
-# Nomad installatin bits
+# Nomad installation bits
   provisioner "shell"{
     inline = [
       "sudo /usr/local/bin/nomad -autocomplete-install",
-      "sudo useradd --system --home /etc/nomad.d --shell /bin/false nomad",
-      "sudo mkdir /etc/nomad.d",
-      "sudo chown -R nomad:nomad /etc/nomad.d",
-      "sudo mkdir /var/lib/nomad",
-      "sudo chown -R nomad:nomad /var/lib/nomad",
+      "sudo useradd --system --home /etc/nomad/nomad.d --shell /bin/false nomad",
+      "sudo mkdir /etc/nomad /etc/nomad/nomad.d /etc/nomad/logs /var/lib/nomad /etc/nomad/storage",
+      "sudo chown -R nomad:nomad /etc/nomad /var/lib/nomad",
       "sudo mv /tmp/nomad.service /etc/systemd/system/nomad.service",
-      "sudo mv /tmp/nomad-common.hcl /etc/nomad.d/nomad-common.hcl"
+      "sudo mv /tmp/nomad-common.hcl /etc/nomad/nomad.d/nomad-common.hcl"
     ]
  }
  post-processor "manifest" {

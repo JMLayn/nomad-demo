@@ -1,4 +1,3 @@
-data_dir  = "/var/lib/nomad"
 
 client {
     options {

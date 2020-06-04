@@ -3,3 +3,7 @@ terraform.tfstate*
 *.txt
 *.pcap
 packers/packerlog2.txt
+Image-Creation/azure-manifest.json
+Image-Creation/azure-manifest.json
+Image-Creation/azure-manifest.json
+Image-Creation/aws-manifest.json

@@ -48,7 +48,7 @@
         "winrm set winrm/config/service/Auth '@{Basic=\"true\"}'",
         "winrm set winrm/config/service '@{AllowUnencrypted=\"true\"}'",
         "winrm set winrm/config/winrs '@{MaxMemoryPerShellMB=\"1024\"}'",
-        "New-Item -ItemType Directory -Path 'c:\\hashicorp\\nomad\\nomad.d', 'c:\\hashicorp\\nomad\\nomad-data', 'c:\\hashicorp\\nomad\\logs'",
+        "New-Item -ItemType Directory -Path 'c:\\hashicorp\\nomad\\nomad.d', 'c:\\hashicorp\\nomad\\nomad-data', 'c:\\hashicorp\\nomad\\logs', 'c:\\hashicorp\\nomad\\storage'",
         "New-Item -ItemType Directory -Path 'c:\\hashicorp\\consul\\consul.d', 'c:\\hashicorp\\consul\\consul-data', 'c:\\hashicorp\\consul\\logs'",
         "Write-Host -ForegroundColor White \"Downloading Nomad\"",
         "(New-Object System.Net.WebClient).DownloadFile('https://releases.hashicorp.com/nomad/0.11.1/nomad_0.11.1_windows_amd64.zip','nomad_0.11.1_windows_amd64.zip')",
@@ -61,11 +61,6 @@
         "Write-Host -ForegroundColor White \"Installing Java\"",
         "Start-Process -NoNewWindow -FilePath jre-8u251-windows-x64.exe -ArgumentList 'INSTALL_SILENT=Enable'"
       ]
-    },
-    {
-      "type": "file",
-      "source": "../files/consul-common.hcl",
-      "destination": "C:\\hashicorp\\consul\\consul.d\\consul-common.hcl"
     },
     {
       "type": "file",

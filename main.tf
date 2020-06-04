@@ -202,10 +202,11 @@ resource aws_instance "nomad-client" {
 #############################################################
 resource null_resource "provisioning-clients" {
   for_each = { for client in aws_instance.nomad-client : client.tags.Name => client }
-  # Nomad Client Configuration.
+  # Nomad Client Configuration including local host volume for storage
   provisioner "remote-exec" {
     inline = [
       "sudo cat << EOF > /tmp/nomad-client.hcl",
+      "log_file = \"/etc/nomad/log\"",
       "advertise {",
       "http = \"${each.value.public_ip}\"",
       "rpc  = \"${each.value.public_ip}\"",
@@ -214,6 +215,10 @@ resource null_resource "provisioning-clients" {
       "client {",
       "    enabled = true",
       "    servers = [\"${aws_instance.nomad-server[0].public_ip}\",\"${aws_instance.nomad-server[1].public_ip}\",\"${aws_instance.nomad-server[2].public_ip}\"]",
+      "    host_volume \"host_storage\" {",
+      "      path      = \"/etc/nomad/storage\"",
+      "      read_only = false",
+      "    }",
       "}",
       "plugin \"raw_exec\" {",
       "   config {",
@@ -221,7 +226,7 @@ resource null_resource "provisioning-clients" {
       "   }",
       "}",
       "EOF",
-      "sudo mv /tmp/nomad-client.hcl /etc/nomad.d/nomad-client.hcl",
+      "sudo mv /tmp/nomad-client.hcl /etc/nomad/nomad.d/nomad-client.hcl",
     ]
   }
   # Consul Client Configuration
@@ -233,7 +238,7 @@ resource null_resource "provisioning-clients" {
       "bind_addr = \"${each.value.private_ip}\"",
       "retry_join = [\"${aws_instance.nomad-server[0].public_ip}\",\"${aws_instance.nomad-server[1].public_ip}\",\"${aws_instance.nomad-server[2].public_ip}\"]",
       "EOF",
-      "sudo mv /tmp/consul-client.hcl /etc/consul.d/consul-client.hcl",
+      "sudo mv /tmp/consul-client.hcl /etc/consul/consul.d/consul-client.hcl",
     ]
   }
   # Fire Up Services
@@ -316,7 +321,7 @@ resource "azurerm_network_interface" "main" {
 # Also note that the machine 'name' must be less than 15 characters
 ###################################################################
 resource "azurerm_windows_virtual_machine" "nomad-demo" {
-  name                = "${var.owner}1"
+  name                = "AZWindows1"
   resource_group_name = data.azurerm_resource_group.main-rg.name
   location            = data.azurerm_resource_group.main-rg.location
   size                = "Standard_F2"
@@ -333,6 +338,9 @@ resource "azurerm_windows_virtual_machine" "nomad-demo" {
     name                 = "${var.owner}-disk"
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
+  }
+  tags = {
+    owner = var.owner
   }
 }
 

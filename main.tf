@@ -32,7 +32,7 @@ data "aws_route53_zone" "selected" {
 }
 resource "aws_route53_record" "fqdn" {
   zone_id = data.aws_route53_zone.selected.zone_id
-  name    = "${var.owner}-nomad.${data.aws_route53_zone.selected.name}"
+  name    = "${var.prefix}-nomad.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "30"
   records = ["${aws_instance.nomad-server[0].public_ip}", "${aws_instance.nomad-server[1].public_ip}", "${aws_instance.nomad-server[2].public_ip}"]
@@ -45,18 +45,18 @@ resource aws_vpc "nomad-demo" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   tags = {
-    Name = "${var.owner}-vpc"
+    Name = "${var.prefix}-vpc"
   }
 }
 resource aws_subnet "nomad-demo" {
   vpc_id     = aws_vpc.nomad-demo.id
   cidr_block = var.vpc_cidr
   tags = {
-    name = "${var.owner}-subnet"
+    name = "${var.prefix}-subnet"
   }
 }
 resource aws_security_group "nomad-demo" {
-  name = "${var.owner}-security-group"
+  name   = "${var.prefix}-security-group"
   vpc_id = aws_vpc.nomad-demo.id
   # Hopefully we all know what these are for
   ingress {
@@ -130,7 +130,7 @@ resource aws_security_group "nomad-demo" {
     prefix_list_ids = []
   }
   tags = {
-    Name = "${var.owner}-security-group"
+    Name = "${var.prefix}-security-group"
   }
 }
 
@@ -138,7 +138,7 @@ resource aws_internet_gateway "nomad-demo" {
   vpc_id = aws_vpc.nomad-demo.id
 
   tags = {
-    Name = "${var.owner}-internet-gateway"
+    Name = "${var.prefix}-internet-gateway"
   }
 }
 resource aws_route_table "nomad-demo" {
@@ -169,9 +169,9 @@ resource aws_instance "nomad-server" {
   vpc_security_group_ids      = [aws_security_group.nomad-demo.id]
   iam_instance_profile        = aws_iam_instance_profile.instance_profile.name
   # Using user_data/template file to setup Consul and Nomad server configuration files
-  user_data = templatefile("files/server_template.tpl", { server_name_tag = "${var.owner}-nomad-server-instance" })
+  user_data = templatefile("files/server_template.tpl", { server_name_tag = "${var.prefix}-nomad-server-instance" })
   tags = {
-    Name  = "${var.owner}-nomad-server-instance"
+    Name  = "${var.prefix}-nomad-server-instance"
     Owner = var.owner_tag
   }
 }
@@ -189,9 +189,9 @@ resource aws_instance "nomad-client" {
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.nomad-demo.id
   vpc_security_group_ids      = [aws_security_group.nomad-demo.id]
-  iam_instance_profile = aws_iam_instance_profile.instance_profile.name
+  iam_instance_profile        = aws_iam_instance_profile.instance_profile.name
   tags = {
-    Name  = "${var.owner}-nomad-client-instance-${count.index}"
+    Name  = "${var.prefix}-nomad-client-instance-${count.index}"
     Owner = var.owner_tag
   }
 }
@@ -271,8 +271,8 @@ provider "azurerm" {
 locals {
   azure_to_json    = jsondecode(file("Image-Creation/azure-manifest.json"))
   azure_pull_build = element(tolist(local.azure_to_json.builds), 0)
-  azure_rg = element((split("/", local.azure_pull_build["artifact_id"])), 4)
-  azure_image = local.azure_pull_build["artifact_id"]
+  azure_rg         = element((split("/", local.azure_pull_build["artifact_id"])), 4)
+  azure_image      = local.azure_pull_build["artifact_id"]
 }
 
 #################################################
@@ -286,7 +286,7 @@ data "azurerm_resource_group" "main-rg" {
 #  Setup Azure Network Services for Compute
 ###########################################
 resource "azurerm_virtual_network" "main" {
-  name                = "${var.owner}-network"
+  name                = "${var.prefix}-network"
   address_space       = ["10.0.0.0/16"]
   location            = data.azurerm_resource_group.main-rg.location
   resource_group_name = data.azurerm_resource_group.main-rg.name
@@ -304,11 +304,11 @@ resource "azurerm_public_ip" "main-ip" {
   allocation_method   = "Dynamic"
 }
 resource "azurerm_network_interface" "main" {
-  name                = "${var.owner}-nic"
+  name                = "${var.prefix}-nic"
   location            = data.azurerm_resource_group.main-rg.location
   resource_group_name = data.azurerm_resource_group.main-rg.name
   ip_configuration {
-    name                          = "${var.owner}-private_ip"
+    name                          = "${var.prefix}-private_ip"
     subnet_id                     = azurerm_subnet.internal.id
     public_ip_address_id          = azurerm_public_ip.main-ip.id
     private_ip_address_allocation = "Dynamic"
@@ -335,12 +335,12 @@ resource "azurerm_windows_virtual_machine" "nomad-demo" {
     protocol = "Http"
   }
   os_disk {
-    name                 = "${var.owner}-disk"
+    name                 = "${var.prefix}-disk"
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
   tags = {
-    owner = var.owner
+    owner = var.owner_tag
   }
 }
 
@@ -358,7 +358,7 @@ resource null_resource "winrm_provisioner" {
       "powershell -ExecutionPolicy Unrestricted -File  c:\\hashicorp\\setupclient.ps1 ${aws_instance.nomad-server[0].public_ip} ${aws_instance.nomad-server[1].public_ip} ${aws_instance.nomad-server[2].public_ip}"
     ]
   }
-# Specifying the connection details for WinRM to the Windows machine
+  # Specifying the connection details for WinRM to the Windows machine
   connection {
     host     = azurerm_windows_virtual_machine.nomad-demo.public_ip_address
     port     = "5985"
@@ -375,11 +375,11 @@ resource null_resource "winrm_provisioner" {
 ##########################################################
 
 resource "aws_iam_instance_profile" "instance_profile" {
-  name_prefix = var.owner
+  name_prefix = var.prefix
   role        = aws_iam_role.instance_role.name
 }
 resource "aws_iam_role" "instance_role" {
-  name_prefix        = var.owner
+  name_prefix        = var.prefix
   assume_role_policy = data.aws_iam_policy_document.instance_role.json
 }
 data "aws_iam_policy_document" "instance_role" {
@@ -415,7 +415,7 @@ data "aws_iam_policy_document" "sharing_volumes" {
 # Setting up EFS on AWS for shared file system
 resource "aws_efs_file_system" "nomad_efs" {
   tags = {
-    Name = var.owner
+    Name = var.owner_tag
   }
 }
 resource "aws_efs_mount_target" "nomad-mount" {

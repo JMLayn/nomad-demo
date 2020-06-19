@@ -1,0 +1,5 @@
+owner = "jmlayn-nomad-img"
+aws_region = "us-east-2"
+aws_instance_type = "t2.small"
+azure_location = "eastus2"
+nomad_rg = "jmlayn-nomad-image"
